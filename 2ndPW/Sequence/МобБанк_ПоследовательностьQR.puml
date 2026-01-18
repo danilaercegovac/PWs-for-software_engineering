@@ -1,0 +1,70 @@
+@startuml
+title QR-оплата (decode-on-server) + чек + PDF
+
+actor Client as "Клиент"
+boundary App as "Мобильное приложение"
+control Camera as "Камера устройства"
+control Backend as "Backend (Payments API)"
+control PdfSvc as "Сервис генерации PDF"
+boundary OS as "ОС (системный Share)"
+
+== Сканирование QR ==
+Client -> App: Открыть "Сканировать QR-код"
+activate App
+App -> Camera: Запрос доступа/запуск камеры
+activate Camera
+Camera --> App: QR payload (сырой)
+deactivate Camera
+
+== Декодирование QR на сервере ==
+App -> Backend: POST /payments/qr/decode\n(rawQrPayload)
+activate Backend
+Backend --> App: Декодированные реквизиты\n(получатель, лицевой счёт, сумма, etc.)
+deactivate Backend
+
+App --> Client: Показать экран "Оплатить QR-код"\n(данные платежа, кнопка "Оплатить")
+
+alt Сумма > баланс
+  App --> Client: "Оплатить" недоступна
+else Сумма валидна
+  App --> Client: "Оплатить" доступна
+  Client -> App: Нажать "Оплатить"
+
+  == Проведение оплаты ==
+  App -> Backend: POST /payments/qr/pay\n(decodedData, amount)
+  activate Backend
+  Backend --> App: operationId + данные для чека/статус
+  deactivate Backend
+
+  App --> Client: Показать "Чек перевода"\n(+ кнопка "Квитанция")
+
+  opt Нажата "Квитанция"
+    Client -> App: Нажать "Квитанция"
+    App -> Backend: GET /receipts/{operationId}/status
+    activate Backend
+    Backend --> App: status (ready|processing|temporarily_unavailable)
+    deactivate Backend
+
+    alt status == ready
+      App -> Backend: GET /receipts/{operationId}.pdf
+      activate Backend
+      Backend --> App: PDF (application/pdf)
+      deactivate Backend
+
+      App --> Client: Предпросмотр PDF + "Поделиться"
+      opt Нажата "Поделиться"
+        Client -> App: Поделиться
+        App -> OS: Системный Share (передать PDF)
+        activate OS
+        OS --> Client: UI выбора приложения
+        deactivate OS
+      end
+    else status != ready
+      note over App: Деградация: оплата завершена,\nPDF может быть временно недоступен
+      App --> Client: "Квитанция временно недоступна"
+    end
+  end
+end
+
+deactivate App
+@enduml

@@ -1,0 +1,75 @@
+@startuml
+title Перевод по номеру телефона + квитанция PDF + системный Share
+
+actor Client as "Клиент"
+boundary App as "Мобильное приложение"
+control Backend as "Backend (Payments API)"
+entity BankDir as "Справочник банков\n(по номеру телефона)"
+control PdfSvc as "Сервис генерации PDF"
+boundary OS as "ОС (системный Share)"
+
+== Открытие и подготовка перевода ==
+Client -> App: Открыть "Перевод по телефону"
+activate App
+
+App -> BankDir: Найти банки по номеру телефона
+activate BankDir
+BankDir --> App: Список банков для номера
+deactivate BankDir
+
+App --> Client: Показать экран "Перевод по телефону"\n(банки, сумма, сообщение, кнопка "Перевести")
+
+opt Сообщение получателю (необязательно)
+  Client -> App: Ввести сообщение (до 100 символов)
+end
+
+Client -> App: Ввести сумму
+
+alt Сумма > баланс или < 0,01
+  App --> Client: "Перевести" недоступна
+else Сумма валидна
+  App --> Client: "Перевести" доступна
+  Client -> App: Нажать "Перевести"
+
+  == Выполнение перевода ==
+  App -> Backend: POST /payments/transfers/phone\n(phone, bankId, amount, message?)
+  activate Backend
+  Backend --> App: operationId + данные для чека/статус
+  deactivate Backend
+
+  App --> Client: Показать экран "Чек перевода"\n(+ кнопка "Квитанция", "Готово")
+
+  == Генерация/получение PDF квитанции ==
+  opt Нажата "Квитанция"
+    Client -> App: Нажать "Квитанция"
+
+    App -> Backend: GET /receipts/{operationId}/status
+    activate Backend
+    Backend --> App: status (ready|processing|temporarily_unavailable)
+    deactivate Backend
+
+    alt status == ready
+      App -> Backend: GET /receipts/{operationId}.pdf
+      activate Backend
+      Backend --> App: PDF (application/pdf) + метаданные
+      deactivate Backend
+
+      App --> Client: Предпросмотр PDF + кнопка "Поделиться"
+
+      opt Нажата "Поделиться"
+        Client -> App: Нажать "Поделиться"
+        App -> OS: Открыть системный Share\n(передать PDF)
+        activate OS
+        OS --> Client: UI выбора приложения
+        deactivate OS
+      end
+
+    else status != ready
+      note over App: По требованиям возможна деградация:\nоперация завершена, PDF временно недоступен
+      App --> Client: Сообщение: "Квитанция временно недоступна"
+    end
+  end
+end
+
+deactivate App
+@enduml
