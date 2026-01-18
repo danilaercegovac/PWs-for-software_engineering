@@ -1,0 +1,26 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Клиент" as Client
+
+rectangle "Мобильное банковское приложение" as App {
+  usecase "Открыть\n"Дебетовая карта"" as UC_OpenDebit
+  usecase "Открыть\n"Функции и настройки"" as UC_OpenSettings
+
+  usecase "Заморозить карту" as UC_Freeze
+  usecase "Присвоить статус\n"замороженный"" as UC_FreezeStatus
+
+  usecase "Разморозить карту" as UC_Unfreeze
+  usecase "Присвоить статус\n"доступный"" as UC_AvailableStatus
+}
+
+Client --> UC_OpenDebit : c раздела 'Главная'
+UC_OpenDebit .> UC_OpenSettings : include
+
+UC_OpenSettings .> UC_Freeze : include
+UC_Freeze .> UC_FreezeStatus : include
+
+UC_FreezeStatus .> UC_Unfreeze : extends
+UC_Unfreeze .> UC_AvailableStatus : include
+@enduml

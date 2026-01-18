@@ -1,0 +1,26 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Клиент" as Client
+
+rectangle "Мобильное банковское приложение" as App {
+  usecase "Открыть\n"Дебетовая карта"" as UC_OpenDebit
+  usecase "Открыть\n"Функции и настройки"" as UC_OpenSettings
+
+  usecase "Открыть\nнастройку лимита" as UC_OpenLimit
+  usecase "Выбрать интервал\n(Месяц/Неделя)" as UC_Period
+  usecase "Ввести сумму лимита" as UC_LimitAmount
+  usecase "Подтвердить (Готово)" as UC_SaveLimit
+  usecase "Применять лимит\nв операциях" as UC_Enforce
+}
+
+Client --> UC_OpenDebit : c раздела 'Главная'
+UC_OpenDebit .> UC_OpenSettings : include
+UC_OpenSettings .> UC_OpenLimit : include
+
+UC_OpenLimit .> UC_Period : include
+UC_OpenLimit .> UC_LimitAmount : include
+UC_OpenLimit .> UC_SaveLimit : include
+UC_SaveLimit .> UC_Enforce : include
+@enduml

@@ -1,0 +1,20 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Клиент" as Client
+
+rectangle "Мобильное банковское приложение" as App {
+  usecase "Открыть\n"Дебетовая карта"" as UC_OpenDebit
+  usecase "Открыть\n"Функции и настройки"" as UC_OpenSettings
+
+  usecase "Просмотреть реквизиты\n(последние 4 цифры)" as UC_ViewLast4
+  usecase "Показать все\nреквизиты карты" as UC_ShowAll
+}
+
+Client --> UC_OpenDebit : c раздела 'Главная'
+UC_OpenDebit .> UC_OpenSettings : include
+
+UC_OpenSettings .> UC_ViewLast4 : include
+UC_ViewLast4 .> UC_ShowAll : extends
+@enduml

@@ -1,0 +1,25 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Клиент" as Client
+actor "ОС (медиапикер/камера)" as OS
+
+rectangle "Мобильное банковское приложение" as App {
+  usecase "Открыть\n"Мой профиль"" as UC_OpenProfile
+  usecase "Изменить фотографию\nпрофиля" as UC_ChangePhoto
+  usecase "Выбрать источник\n(Библиотека/Камера)" as UC_PickSource
+  usecase "Загрузить/сделать фото" as UC_GetMedia
+  usecase "Удалить фотографию" as UC_DeletePhoto
+}
+
+Client --> UC_OpenProfile
+Client --> UC_ChangePhoto : в разделе 'Мой профиль'
+
+UC_ChangePhoto .> UC_PickSource : include
+OS <-- UC_PickSource
+UC_PickSource .> UC_GetMedia : include
+OS <-- UC_GetMedia
+
+UC_DeletePhoto <. UC_GetMedia : extends
+@enduml

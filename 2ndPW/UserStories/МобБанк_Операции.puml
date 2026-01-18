@@ -1,0 +1,19 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Клиент" as Client
+
+rectangle "Мобильное банковское приложение" as App {
+  usecase "Открыть\nисторию операций" as UC_OpenOps
+  usecase "Просмотреть\nсписок операций" as UC_ViewOps
+  usecase "Фильтровать\nпо дате" as UC_Filter
+  usecase "Открыть\nдетали операции" as UC_Details
+}
+
+Client --> UC_OpenOps : c раздела 'Главная'
+UC_OpenOps .> UC_Filter : extends
+UC_OpenOps --> UC_ViewOps : include
+UC_Filter .> UC_ViewOps : extends
+UC_ViewOps .> UC_Details : extends
+@enduml

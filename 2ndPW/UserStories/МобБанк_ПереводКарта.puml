@@ -1,0 +1,37 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Клиент" as Client
+actor "БД карт\n(межбанковская)" as CardDB
+actor "ОС (обмен файлами)" as OS
+
+rectangle "Мобильное банковское приложение" as App {
+  usecase "Открыть\nперевод по номеру карты" as UC_OpenCard
+  usecase "Ввести номер карты" as UC_EnterCard
+  usecase "Проверить карту\nв БД" as UC_CheckCard
+  usecase "Ввести сумму" as UC_Amount
+  usecase "Ввести сообщение" as UC_Message
+  usecase "Выполнить перевод" as UC_DoTransfer
+  usecase "Показать чек\nперевода" as UC_ShowReceipt
+  usecase "Сгенерировать PDF\nквитанцию" as UC_GenPdf
+  usecase "Поделиться PDF" as UC_SharePdf
+}
+
+Client --> UC_OpenCard : c раздела 'Главная'
+
+UC_OpenCard .> UC_EnterCard : include
+UC_CheckCard .> UC_EnterCard : include
+CardDB --> UC_CheckCard
+
+UC_EnterCard .> UC_Amount : include
+UC_Amount .> UC_Message : extends
+
+UC_Amount .> UC_DoTransfer : include
+UC_DoTransfer .> UC_ShowReceipt : include
+
+UC_ShowReceipt .> UC_GenPdf : extends
+OS <-- UC_GenPdf
+UC_SharePdf <. UC_GenPdf : extends
+OS <-- UC_SharePdf
+@enduml

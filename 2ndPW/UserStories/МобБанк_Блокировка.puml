@@ -1,0 +1,18 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Клиент" as Client
+
+rectangle "Мобильное банковское приложение" as App {
+  usecase "Открыть\n"Дебетовая карта"" as UC_OpenDebit
+  usecase "Открыть\n"Функции и настройки"" as UC_OpenSettings
+  usecase "Заблокировать карту" as UC_Block
+  usecase "Присвоить статус\n"заблокированный"" as UC_BlockStatus
+}
+
+Client --> UC_OpenDebit : c раздела 'Главная'
+UC_OpenDebit .> UC_OpenSettings : include
+UC_OpenSettings .> UC_Block : include
+UC_Block .> UC_BlockStatus : include
+@enduml

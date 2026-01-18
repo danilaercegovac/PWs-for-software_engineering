@@ -1,0 +1,42 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Клиент" as Client
+actor "ОС устройства\n(SMS)" as OS
+
+rectangle "Доступ" {
+  (Ввести номер телефона) as UC_Phone
+  (Получить SMS-код) as UC_GetSms
+  (Ввести SMS-код) as UC_EnterSms
+  (Проверить клиента и код) as UC_CheckSms
+  (Ввести PIN-код) as UC_Pin
+  (Проверить PIN-код) as UC_CheckPin
+  usecase "Стать клиентом\n(заявка на дебетовую карту)" as UC_Become
+  (Проверить возраст >= 14) as UC_Age
+  (Показать успех заявки) as UC_Success
+  (Перейти на Главную) as UC_ToHome
+  (Показать ошибку кода SMS) as UC_SmsErr
+  (Показать ошибку PIN) as UC_PinErr
+}
+
+Client --> UC_Phone
+UC_Phone --> UC_GetSms : <<include>>
+OS --> UC_GetSms
+
+UC_GetSms --> UC_EnterSms
+UC_EnterSms --> UC_CheckSms : <<include>>
+
+UC_CheckSms ..> UC_SmsErr : <<extend>>\nкод неверный
+UC_CheckSms --> UC_Pin : <<include>>\nкод верный + клиент есть
+UC_CheckSms --> UC_Become : <<include>>\nкод верный + клиента нет
+
+Client --> UC_Pin
+UC_Pin --> UC_CheckPin : <<include>>
+UC_CheckPin ..> UC_PinErr : <<extend>>\nPIN неверный
+UC_CheckPin --> UC_ToHome : <<include>>
+
+Client --> UC_Become
+UC_Become --> UC_Age : <<include>>
+UC_Age ..> UC_Success : <<extend>>\nвозраст >= 14
+@enduml

@@ -1,0 +1,22 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Клиент" as Client
+
+rectangle "Мобильное банковское приложение" as App {
+  usecase "Открыть\n"Дебетовая карта"" as UC_OpenDebit
+  usecase "Открыть\n"Функции и настройки"" as UC_OpenSettings
+
+  usecase "Инициировать\nустановку PIN-кода" as UC_StartPin
+  usecase "Ввести PIN-код\n(4 цифры)" as UC_EnterPin
+  usecase "Сохранить PIN-код\nдля физической карты" as UC_SavePin
+}
+
+Client --> UC_OpenDebit : c раздела 'Главная'
+UC_OpenDebit .> UC_OpenSettings : include
+
+UC_OpenSettings .> UC_StartPin : include
+UC_StartPin .> UC_EnterPin : include
+UC_EnterPin .> UC_SavePin : include
+@enduml

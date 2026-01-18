@@ -1,0 +1,24 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Клиент" as Client
+actor "ОС (обмен файлами)" as OS
+
+rectangle "Мобильное банковское приложение" as App {
+  usecase "Открыть\n"Дебетовая карта"" as UC_OpenDebit
+  usecase "Открыть\n"Реквизиты счёта"" as UC_OpenAccDetails
+  usecase "Просмотреть реквизиты\nсчёта" as UC_ViewAccDetails
+  usecase "Сгенерировать PDF\nс реквизитами" as UC_GenPdf
+  usecase "Отправить реквизиты\n(PDF)" as UC_SendPdf
+}
+
+Client --> UC_OpenDebit : c раздела 'Главная'
+UC_OpenDebit .> UC_OpenAccDetails : include
+UC_OpenAccDetails .> UC_ViewAccDetails : include
+
+
+UC_ViewAccDetails .> UC_GenPdf : include
+UC_GenPdf .> UC_SendPdf : extends
+OS <-- UC_SendPdf
+@enduml

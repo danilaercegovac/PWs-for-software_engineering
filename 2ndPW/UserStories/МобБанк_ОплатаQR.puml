@@ -1,0 +1,32 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Клиент" as Client
+actor "Камера устройства" as Camera
+actor "ОС (обмен файлами)" as OS
+
+rectangle "Мобильное банковское приложение" as App {
+  usecase "Открыть\nсканирование QR" as UC_OpenScan
+  usecase "Сканировать QR-код" as UC_Scan
+  usecase "Показать данные\nплатежа (QR)" as UC_ShowPayData
+  usecase "Оплатить по QR-коду" as UC_Pay
+  usecase "Показать чек\nоперации" as UC_ShowReceipt
+  usecase "Сгенерировать PDF\nквитанцию" as UC_GenPdf
+  usecase "Поделиться PDF" as UC_SharePdf
+}
+
+Client --> UC_OpenScan : c раздела 'Главная'
+Camera <-- UC_OpenScan
+
+UC_OpenScan .> UC_Scan : include
+Camera <-- UC_Scan
+UC_Scan .> UC_ShowPayData : include
+UC_ShowPayData .> UC_Pay : include
+UC_Pay .> UC_ShowReceipt : include
+
+UC_GenPdf <. UC_ShowReceipt : extends
+OS <-- UC_GenPdf
+UC_SharePdf .> UC_GenPdf : include
+OS <-- UC_SharePdf
+@enduml
