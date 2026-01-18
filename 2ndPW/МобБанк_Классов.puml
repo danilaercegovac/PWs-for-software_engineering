@@ -1,0 +1,212 @@
+@startuml
+title Logical Data Model - Mobile Banking (Pilot)
+
+skinparam classAttributeIconSize 0
+hide circle
+
+' =========================
+' Enums (from LDM constraints)
+' =========================
+enum CustomerStatus {
+  active
+  blocked
+}
+
+enum CardStatus {
+  active
+  frozen
+  blocked
+}
+
+enum OperationDirection {
+  debit
+  credit
+}
+
+enum TransferKind {
+  by_phone
+  by_card
+}
+
+enum LimitPeriod {
+  week
+  month
+}
+
+' =========================
+' Entities (tables)
+' =========================
+class Customer {
+  +customer_id: UUID <<PK>>
+  +phone: VARCHAR(15)
+  +last_name: VARCHAR(100)
+  +first_name: VARCHAR(100)
+  +middle_name: VARCHAR(100) <<NULL>>
+  +email: VARCHAR(255)
+  +birth_date: DATE
+  +profile_photo_id: UUID <<NULL>>
+  +status: CustomerStatus
+  +created_at: TIMESTAMP
+  +updated_at: TIMESTAMP
+}
+
+class CardApplication {
+  +application_id: UUID <<PK>>
+  +phone: VARCHAR(15)
+  +last_name: VARCHAR(100)
+  +first_name: VARCHAR(100)
+  +middle_name: VARCHAR(100) <<NULL>>
+  +email: VARCHAR(255)
+  +birth_date: DATE
+  +age_check_passed: BOOLEAN
+  +status: VARCHAR(30)
+  +submitted_at: TIMESTAMP
+  +processed_at: TIMESTAMP <<NULL>>
+}
+
+class DebitCard {
+  +debit_card_id: UUID <<PK>>
+  +customer_id: UUID <<FK Customer>>
+  +pan_masked_last4: CHAR(4)
+  +pan_token: VARCHAR(255)
+  +status: CardStatus
+  +balance_amount: DECIMAL(15,2)
+  +currency: CHAR(3)
+  +opened_at: TIMESTAMP
+  +blocked_at: TIMESTAMP <<NULL>>
+  +frozen_at: TIMESTAMP <<NULL>>
+}
+
+class Account {
+  +account_id: UUID <<PK>>
+  +customer_id: UUID <<FK Customer>>
+  +contract_number: VARCHAR(50)
+  +recipient_name: VARCHAR(255)
+  +account_number: VARCHAR(34)
+  +payment_purpose: VARCHAR(255)
+  +bic: VARCHAR(9)
+  +bank_name: VARCHAR(255)
+  +correspondent_account: VARCHAR(34)
+  +inn: VARCHAR(12)
+}
+
+class Operation {
+  +operation_id: UUID <<PK>>
+  +account_id: UUID <<FK Account>>
+  +debit_card_id: UUID <<FK DebitCard>>
+  +type: VARCHAR(30)
+  +direction: OperationDirection
+  +amount: DECIMAL(15,2)
+  +currency: CHAR(3)
+  +occurred_at: TIMESTAMP
+  +counterparty_name: VARCHAR(255)
+  +status: VARCHAR(20)
+  +decline_reason: VARCHAR(255) <<NULL>>
+  +idempotency_key: VARCHAR(100)
+}
+
+class Transfer {
+  +transfer_id: UUID <<PK>>
+  +operation_id: UUID <<FK Operation>>
+  +transfer_kind: TransferKind
+  +sender_account_id: UUID  ' счёт отправителя
+  +recipient_phone: VARCHAR(15) <<NULL>>
+  +recipient_card_token: VARCHAR(255) <<NULL>>
+  +recipient_bank_id: UUID <<NULL>>
+  +recipient_name: VARCHAR(255)
+  +message: VARCHAR(100) <<NULL>>
+  +amount: DECIMAL(15,2)
+  +currency: CHAR(3)
+  +status: VARCHAR(20)
+  +created_at: TIMESTAMP
+}
+
+class QrPayment {
+  +qr_payment_id: UUID <<PK>>
+  +operation_id: UUID <<FK Operation>>
+  +qr_raw_payload: TEXT
+  +merchant_name: VARCHAR(255)
+  +beneficiary_account: VARCHAR(50)
+  +amount: DECIMAL(15,2)
+  +currency: CHAR(3)
+  +status: VARCHAR(20)
+  +created_at: TIMESTAMP
+}
+
+class CardSpendingLimit {
+  +limit_id: UUID <<PK>>
+  +debit_card_id: UUID  ' FK -> DebitCard
+  +period: LimitPeriod
+  +limit_amount: DECIMAL(15,2)
+  +currency: CHAR(3)
+  +spent_amount: DECIMAL(15,2)
+  +status: VARCHAR(20)
+  +updated_at: TIMESTAMP
+}
+
+class Document {
+  +document_id: UUID <<PK>>
+  +customer_id: UUID <<FK Customer>>
+  +type: VARCHAR(30)
+  +status: VARCHAR(20)
+  +created_at: TIMESTAMP
+  +updated_at: TIMESTAMP
+}
+
+class DocumentPhoto {
+  +photo_id: UUID <<PK>>
+  +document_id: UUID <<FK Document>>
+  +file_url: VARCHAR(500)
+  +order_index: INTEGER
+  +uploaded_at: TIMESTAMP
+}
+
+' =========================
+' Relationships (cardinalities from LDM text)
+' =========================
+
+' Customer 1 — 0..N CardApplication
+Customer "1" -- "0..N" CardApplication : submits >
+
+' Customer 1 — 0..1 DebitCard (pilot)
+Customer "1" -- "0..1" DebitCard : owns >
+
+' Customer 1 — 0..1 Account (pilot)
+Customer "1" -- "0..1" Account : owns >
+
+' DebitCard 1 — 1 Account (pilot 1:1)
+DebitCard "1" -- "1" Account : linked >
+
+' DebitCard 1 — 0..1 CardSpendingLimit
+DebitCard "1" -- "0..1" CardSpendingLimit : limit >
+
+' Account 1 — 0..N Operation
+Account "1" -- "0..N" Operation : operations >
+
+' DebitCard 1 — 0..N Operation
+DebitCard "1" -- "0..N" Operation : operations >
+
+' Operation 1 — 0..1 Transfer
+Operation "1" -- "0..1" Transfer : transfer_details >
+
+' Operation 1 — 0..1 QrPayment
+Operation "1" -- "0..1" QrPayment : qr_details >
+
+' Transfer N — 1 Account (sender_account_id)
+Account "1" -- "0..N" Transfer : initiates (sender_account_id) >
+
+' Customer 1 — 0..N Document
+Customer "1" -- "0..N" Document : documents >
+
+' Document 1 — 0..N DocumentPhoto
+Document "1" -- "0..N" DocumentPhoto : photos (<=10) >
+
+note right of DocumentPhoto
+Ограничение: до 10 фото на документ (бизнес-правило).
+end note
+
+note bottom of Operation
+В пилоте операция хранит и account_id, и debit_card_id.
+end note
+
+@enduml
